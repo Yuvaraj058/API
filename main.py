@@ -5,16 +5,13 @@ from sqlmodel import SQLModel, Field, Session, create_engine, select
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 
-# ----------------------------
 # Database setup
-# ----------------------------
+
 DATABASE_URL = "sqlite:///./test.db"  # Local SQLite database
 engine = create_engine(DATABASE_URL, echo=False)
 
-
-# ----------------------------
 # Models
-# ----------------------------
+
 class Task(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str
@@ -26,10 +23,8 @@ class Comment(SQLModel, table=True):
     author: str
     content: str
 
-
-# ----------------------------
 # Schemas (Pydantic models)
-# ----------------------------
+
 class TaskCreate(BaseModel):
     title: str
 
@@ -59,19 +54,15 @@ class CommentUpdate(BaseModel):
     author: Optional[str] = None
     content: Optional[str] = None
 
-
-# ----------------------------
 # Lifespan (startup/shutdown)
-# ----------------------------
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     SQLModel.metadata.create_all(engine)
     yield
 
-
-# ----------------------------
 # FastAPI App
-# ----------------------------
+
 app = FastAPI(title="Tasks + Comments API", lifespan=lifespan)
 
 
@@ -80,10 +71,6 @@ def get_session():
     with Session(engine) as session:
         yield session
 
-
-# ----------------------------
-# Task Endpoints
-# ----------------------------
 @app.post("/tasks/", response_model=TaskRead, status_code=status.HTTP_201_CREATED)
 def create_task(task: TaskCreate, session: Session = Depends(get_session)):
     db_task = Task(title=task.title)
@@ -133,9 +120,6 @@ def delete_task(task_id: int, session: Session = Depends(get_session)):
     return None
 
 
-# ----------------------------
-# Comment Endpoints
-# ----------------------------
 @app.get("/tasks/{task_id}/comments/", response_model=List[CommentRead])
 def list_comments(task_id: int = Path(..., gt=0), session: Session = Depends(get_session)):
     task = session.get(Task, task_id)
